@@ -1,6 +1,6 @@
 import socket
 
-ADDR = ('127.0.0.1', 8015)
+ADDR = ('127.0.0.1', 8011) #port 0 may force os to find an open port
 
 client = socket.socket(
     socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_IP
