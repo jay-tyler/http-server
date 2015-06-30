@@ -1,6 +1,6 @@
 import socket
 
-ADDR = ('127.0.0.1', 8007)
+ADDR = ('127.0.0.1', 8015)
 
 client = socket.socket(
     socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_IP
@@ -22,12 +22,13 @@ def main():
                     break
         except Exception as e:
             client.close()
-            print e
+            print msg
+            break
 
 
 
 if __name__ == '__main__':
+    main()
 
 
-#find setting in doc to fix port is in use > dynamically?
-
+# #find setting in doc to fix port is in use > dynamically?

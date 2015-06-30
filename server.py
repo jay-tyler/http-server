@@ -1,6 +1,6 @@
 import socket
 
-ADDR = ('127.0.0.1', 8007)
+ADDR = ('127.0.0.1', 8015)
 
 socket = socket.socket(
     socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_IP
@@ -29,26 +29,27 @@ def response_error():
 
 
 def main():
-    message = ""
+    msg = ""
     while True:
         try:
             conn, addr =  socket.accept()
             while True:
-                message += conn.recv(16)
+                msg += conn.recv(16)
                 conn.sendall(msg)
                 if len(msg) <  16:
+                    # response_ok()
                     conn.close()
                     break
         except KeyboardInterrupt:
             client.close()
             break
-    sys.stdout.write(message)
-    response_ok()
+    sys.stdout.write(msg)
+    
 
 
 
 if __name__ == '__main__':
+    main()
 
 
 #find setting in doc to fix port is in use > dynamically?
-
