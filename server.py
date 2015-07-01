@@ -2,7 +2,7 @@
 import socket
 import sys
 
-ADDR = ('127.0.0.1', 8001)  # port 0 may force os to find an open port
+ADDR = ('127.0.0.1', 8010)  # port 0 may force os to find an open port
 
 
 def setup_server():
@@ -47,7 +47,6 @@ def main():
                 msg_chunk = conn.recv(1024)
                 msg += msg_chunk
                 if len(msg_chunk) < 1024:
-                    # response_ok()
                     conn.sendall(response_ok())
                     conn.close()
                     break
