@@ -5,7 +5,7 @@ import pytest
 import server
 from multiprocessing import Process
 
-ADDR = ('127.0.0.1', 8010)  # port 0 may force os to find an open port
+ADDR = ('127.0.0.1', 8000)  # port 0 may force os to find an open port
 
 STATUS200 = b"""HTTP/1.1 200 OK\r\n
     DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n
@@ -33,11 +33,10 @@ def client_socket():
         socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_IP
         )
     client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    client_socket.connect(ADDR)
     return client_socket
 
 
-def start_server(server_process):
+def test_start_server(server_process):
     """Dummy function to start server"""
     pass
 
@@ -51,6 +50,7 @@ def test_response_error():
 
 
 def test_functional_test_of_response(client_socket):
+    client_socket.connect(ADDR)
     client_socket.sendall("Hello there.")
     while True:
         response_back = client_socket.recv(1024)

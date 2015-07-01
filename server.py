@@ -2,7 +2,7 @@
 import socket
 import sys
 
-ADDR = ('127.0.0.1', 8010)  # port 0 may force os to find an open port
+ADDR = ('127.0.0.1', 8000)  # port 0 may force os to find an open port
 
 
 def setup_server():
