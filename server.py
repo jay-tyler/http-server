@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import socket
 import sys
 
@@ -15,22 +16,23 @@ def setup_server():
 
 def response_ok():
     """Return a status 200 HTTP response_ok"""
-    response_ok = b"""HTTP/1.1 200 OK\r\n\
-    DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n\
-    SERVER: Python/2.7.6\r\n\
-    \r\n\
-    """
+
+    response_ok = b"""HTTP/1.1 200 OK\r\n
+    DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n
+    SERVER: Python/2.7.6\r\n
+    \r\n"""
+
     return response_ok
 
 
 def response_error():
     """Return a status 500 Internal Server Error"""
 
-    response_error = b"""HTTP 500 Internal Server Error \r\n\
-    DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n\
-    SERVER: Python/2.7.6\r\n\
-    \r\n\
-    """
+    response_error = b"""HTTP 500 Internal Server Error \r\n
+    DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n
+    SERVER: Python/2.7.6\r\n
+    \r\n"""
+
     return response_error
 
 
@@ -46,7 +48,7 @@ def main():
                 msg += msg_chunk
                 if len(msg_chunk) < 1024:
                     # response_ok()
-                    conn.sendall(msg)
+                    conn.sendall(response_ok())
                     conn.close()
                     break
             sys.stdout.write(msg)
