@@ -4,7 +4,8 @@ import socket
 import sys
 
 
-ADDR = ('127.0.0.1', 8000)
+ADDR = ('127.0.0.1', 8001)
+CRLF = ('\r\n')
 
 
 def setup_server():

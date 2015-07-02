@@ -6,9 +6,8 @@ import server
 from multiprocessing import Process
 
 
-ADDR = ('127.0.0.1', 8000)
-CRLF = b"\r\n"
-
+ADDR = ('127.0.0.1', 8001)
+CRLF = ('\r\n')
 
 STATUS200 = b"".join(["HTTP/1.1 200 OK\r\n",
                       "DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n",
