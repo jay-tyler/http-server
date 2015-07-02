@@ -1,20 +1,24 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import socket
 import pytest
 import server
 from multiprocessing import Process
 
+
 ADDR = ('127.0.0.1', 8000)
+CRLF = b"\r\n"
 
-STATUS200 = b"""HTTP/1.1 200 OK\r\n
-    DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n
-    SERVER: Python/2.7.6\r\n
-    \r\n"""
 
-STATUS500 = b"""HTTP 500 Internal Server Error \r\n
-    DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n
-    SERVER: Python/2.7.6\r\n
-    \r\n"""
+STATUS200 = b"".join(["HTTP/1.1 200 OK\r\n",
+                      "DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n",
+                      "SERVER: Python/2.7.6\r\n",
+                      "\r\n"])
+
+STATUS500 = b"".join(["HTTP 500 Internal Server Error\r\n",
+                      "DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n",
+                      "SERVER: Python/2.7.6\r\n",
+                      "\r\n"])
 
 
 @pytest.yield_fixture()
@@ -41,11 +45,12 @@ def test_start_server(server_process):
 
 
 def test_response_ok():
-    assert server.response_ok() == STATUS200
+    assert b"200 OK" in server.response_ok().split(CRLF)[0]
 
 
 def test_response_error():
-    assert server.response_error() == STATUS500
+    assert b"500 Internal Server Error" in server.response_error(
+                                                        ).split(CRLF)[0]
 
 
 def test_functional_test_of_response(client_socket):

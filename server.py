@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import socket
 import sys
+
 
 ADDR = ('127.0.0.1', 8000)
 
