@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import socket
 import sys
 
-ADDR = ('127.0.0.1', 8000)  # port 0 may force os to find an open port
+
+ADDR = ('127.0.0.1', 8001)
+CRLF = ('\r\n')
 
 
 def setup_server():
@@ -17,22 +20,20 @@ def setup_server():
 def response_ok():
     """Return a status 200 HTTP response_ok"""
 
-    response_ok = b"""HTTP/1.1 200 OK\r\n
-    DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n
-    SERVER: Python/2.7.6\r\n
-    \r\n"""
-
+    response_ok = b"".join(["HTTP/1.1 200 OK\r\n",
+                            "DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n",
+                            "SERVER: Python/2.7.6\r\n",
+                            "\r\n"])
     return response_ok
 
 
 def response_error():
     """Return a status 500 Internal Server Error"""
 
-    response_error = b"""HTTP 500 Internal Server Error \r\n
-    DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n
-    SERVER: Python/2.7.6\r\n
-    \r\n"""
-
+    response_error = b"".join(["HTTP 500 Internal Server Error\r\n",
+                               "DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n",
+                               "SERVER: Python/2.7.6\r\n",
+                               "\r\n"])
     return response_error
 
 
