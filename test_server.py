@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 import socket
-import sys
 import pytest
 import server
 from multiprocessing import Process
 
-ADDR = ('127.0.0.1', 8000)  # port 0 may force os to find an open port
+ADDR = ('127.0.0.1', 8000)
 
 STATUS200 = b"""HTTP/1.1 200 OK\r\n
     DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n
