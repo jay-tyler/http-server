@@ -45,26 +45,9 @@ def response_ok():
     return Response.format(response_code=b'200',
                            response_reason=b'OK')
 
-    # """Return a status 200 HTTP response_ok"""
-    # response_ok = b"""HTTP/1.1 200 OK\r\n
-    # DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n
-    # SERVER: Python/2.7.6\r\n
-    # \r\n"""
-
-
-
 def response_error():
     return Response.format(response_code=b'200',
                            response_reason=b'response_reason')
-    # """Return a status 500 Internal Server Error"""
-
-    # response_error = b"""HTTP 500 Internal Server Error \r\n
-    # DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n
-    # SERVER: Python/2.7.6\r\n
-    # \r\n"""
-    
-
-
 
 def main():
     server_socket = setup_server()
@@ -84,7 +67,6 @@ def main():
                 response_error(400, "Invalid SyntaxError")
             except ValueError:
                 response_error(400, "Value Error")
-                #addmore
             sys.stdout.write(msg)
             conn.close()
             break
