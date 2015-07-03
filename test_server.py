@@ -24,19 +24,24 @@ REQUEST_SKEL = CRLF.join(["{request} {requri} {protocol}",
                           "Host: {host}", "Date: {date}"]).lstrip(CRLF)
 
 REQ_GOOD = REQUEST_SKEL.format(request='get', requri='wwww.host.com/stuff',
-                                protocol="HTTP\1.1", host="www.host.com",
+                                protocol="HTTP/1.1", host="www.host.com",
                                 date=DUMMY_DATE)
 
 
 REQ_BAD_METHOD = REQUEST_SKEL.format(request='post', requri='wwww.host.com/stuff',
-                                protocol="HTTP\1.1", host="www.host.com",
+                                protocol="HTTP/1.1", host="www.host.com",
                                 date=DUMMY_DATE)
 
 
 REQ_BAD_PROTOCOL = REQUEST_SKEL.format(request='post', requri='wwww.host.com/stuff',
-                                protocol="HTTP\1.0", host="www.host.com",
+                                protocol="HTTP/1.0", host="www.host.com",
                                 date=DUMMY_DATE)
 
+
+REQ_BAD_HOST = CRLF.join(["{request} {requri} {protocol}",
+                          "Date: {date}"]).lstrip(CRLF).format(
+                                  request='post', requri='wwww.host.com/stuff',
+                                  protocol="HTTP/1.0", date=DUMMY_DATE)
 
 
 @pytest.yield_fixture()
@@ -74,11 +79,11 @@ def test_parse_good_request():
 #                                                         ).split(CRLF)[0]
 
 
-def test_functional_test_of_response(client_socket):
-    client_socket.connect(ADDR)
-    client_socket.sendall("Hello there.")
-    while True:
-        response_back = client_socket.recv(1024)
-        if len(response_back) < 1024:
-            break
-    assert STATUS200.split("\r\n")[0] == response_back.split("\r\n")[0]
+# def test_functional_test_of_response(client_socket):
+#     client_socket.connect(ADDR)
+#     client_socket.sendall("Hello there.")
+#     while True:
+#         response_back = client_socket.recv(1024)
+#         if len(response_back) < 1024:
+#             break
+#     assert STATUS200.split("\r\n")[0] == response_back.split("\r\n")[0]

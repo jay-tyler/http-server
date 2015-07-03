@@ -33,8 +33,8 @@ def parse_request(request):
     # Get method from initial line, and strip any leading white-space
     # or CRLF chars. Also format to uppercase for consistent handling.
     reqmethod = initial_line.split()[0].strip().lstrip(CRLF).upper()
-    uri = initial_line[1].strip()
-    protocol = initial_line[2].strip()
+    uri = initial_line.split()[1].strip()
+    protocol = initial_line.split()[2].strip()
     #  Get headers by splitting response by CRLF and dropping the first line.
     headers = [line.split()[0].strip() for line in lines][1:]
     #  Grabbing each header from above, removing trailing colon and converting to uppercase
@@ -53,34 +53,13 @@ def parse_request(request):
         #  HTTP request is for a different protocol; containing fct should
         #  return 505 HTTP Version Not Supported
         raise NotImplementedError
-    elif b'DATE' not in headers:
+    elif b'HOST' not in headers:
         #  HTTP request is not properly formed; containing fct should
         #  return 400 Bad Request
         raise ValueError
     else:
         #  HTTP request passes all prior checks, pass URI back
         return uri
-
-
-
-
-
-
-
-
-    #     raise TypeError(b'Method Not Allowed')
-    # elif header_pieces[2] != PROTOCOL:
-    #     raise ValueError(b'HTTP Version Not Supported')
-    # host_line = lines[1]
-    # host_line_pieces = host_line.split()
-    # if lines[2] != b'':
-    #     raise SyntaxError(b'Bad Request')
-    # if host_line_pieces[0] != HOST_PREFIX:
-    #     raise Exception(b'Bad Request')
-    # else:
-    #     return header_pieces[1]
-
-
 
 def setup_server():
     server_socket = socket.socket(
@@ -127,7 +106,8 @@ def main():
                 msg_chunk = conn.recv(1024)
                 msg += msg_chunk
                 if len(msg_chunk) < 1024:
-                    conn.sendall(response_ok())
+                    parse_request(msg)
+                    # conn.sendall(response_ok())
                     conn.close()
                     break
             sys.stdout.write(msg)
