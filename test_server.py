@@ -7,7 +7,8 @@ from multiprocessing import Process
 
 
 ADDR = ('127.0.0.1', 8001)
-CRLF = ('\r\n')
+CRLF = b'\r\n'
+DUMMY_DATE = "Sun, 21 Jul 2001 23:32:15 GTM"
 
 STATUS200 = b"".join(["HTTP/1.1 200 OK\r\n",
                       "DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n",
@@ -18,6 +19,24 @@ STATUS500 = b"".join(["HTTP 500 Internal Server Error\r\n",
                       "DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n",
                       "SERVER: Python/2.7.6\r\n",
                       "\r\n"])
+
+REQUEST_SKEL = CRLF.join(["{request} {requri} {protocol}",
+                          "Host: {host}", "Date: {date}"]).lstrip(CRLF)
+
+REQ_GOOD = REQUEST_SKEL.format(request='get', requri='wwww.host.com/stuff',
+                                protocol="HTTP\1.1", host="www.host.com",
+                                date=DUMMY_DATE)
+
+
+REQ_BAD_METHOD = REQUEST_SKEL.format(request='post', requri='wwww.host.com/stuff',
+                                protocol="HTTP\1.1", host="www.host.com",
+                                date=DUMMY_DATE)
+
+
+REQ_BAD_PROTOCOL = REQUEST_SKEL.format(request='post', requri='wwww.host.com/stuff',
+                                protocol="HTTP\1.0", host="www.host.com",
+                                date=DUMMY_DATE)
+
 
 
 @pytest.yield_fixture()
@@ -43,13 +62,16 @@ def test_start_server(server_process):
     pass
 
 
-def test_response_ok():
-    assert b"200 OK" in server.response_ok().split(CRLF)[0]
+def test_parse_good_request():
+    assert server.parse_request(REQ_GOOD) == "wwww.host.com/stuff"
+
+# def test_response_ok():
+#     assert b"200 OK" in server.response_ok().split(CRLF)[0]
 
 
-def test_response_error():
-    assert b"500 Internal Server Error" in server.response_error(
-                                                        ).split(CRLF)[0]
+# def test_response_error():
+#     assert b"500 Internal Server Error" in server.response_error(
+#                                                         ).split(CRLF)[0]
 
 
 def test_functional_test_of_response(client_socket):

@@ -7,28 +7,79 @@ import sys
 ADDR = ('127.0.0.1', 8001)
 CRLF = ('\r\n')
 PROTOCOL = b'HTTP/1.1'
+# Using this as a dummy var
+formatted_date = "Sun, 21 Jul 2001 23:32:15 GTM"
+reqtypes = set(["POST", "GET", "PUT", "HEAD", "DELETE", "OPTIONS", "TRACE"])
 
 Response = CRLF.join([
     b'HTTP/1.1 {response_code} {response_reason}',
     b'Content-Type: text/html; charset=UTF-8',
+    b'Date: {formatted_date}',
     b''])
 
+
 def parse_request(request):
+    """Take an HTTP request and determine whether it is valid; will raise
+    an appropriate error if not
+
+    will validate the following:
+        * Request is GET method
+        * Request is HTTP/1.1
+        * Request include valid host header
+    if these validations are met, then return URI from request"""
+
     lines = request.split(CRLF)
-    header = lines[0]
-    header_pieces = header.split()
-    if header_pieces[0] != GET:
-        raise TypeError(b'Method Not Allowed')
-    elif header_pieces[2] != PROTOCOL:
-        raise ValueError(b'HTTP Version Not Supported')
-    host_line = lines[1]
-    host_line_pieces = host_line.split()
-    if lines[2] != b'':
-        raise SyntaxError(b'Bad Request')
-    if host_line_pieces[0] != HOST_PREFIX:
-        raise Exception(b'Bad Request')
+    initial_line = lines[0]
+    # Get method from initial line, and strip any leading white-space
+    # or CRLF chars. Also format to uppercase for consistent handling.
+    reqmethod = initial_line.split()[0].strip().lstrip(CRLF).upper()
+    uri = initial_line[1].strip()
+    protocol = initial_line[2].strip()
+    #  Get headers by splitting response by CRLF and dropping the first line.
+    headers = [line.split()[0].strip() for line in lines][1:]
+    #  Grabbing each header from above, removing trailing colon and converting to uppercase
+    headers = [header.rstrip(':').upper() for header in headers]
+    #  Converting headers to set for ease of membership testing
+    headers = set(headers)
+    if reqmethod not in reqtypes:
+        #  HTTP request is invalid; containing fct should return
+        #  400 Bad Request
+        raise ValueError
+    elif b'GET' not in reqmethod:
+        #  HTTP request is for unsupported method; containing fct should
+        #  return 405 Method Not Allowed
+        raise IndexError
+    elif b'HTTP/1.1' not in protocol:
+        #  HTTP request is for a different protocol; containing fct should
+        #  return 505 HTTP Version Not Supported
+        raise NotImplementedError
+    elif b'DATE' not in headers:
+        #  HTTP request is not properly formed; containing fct should
+        #  return 400 Bad Request
+        raise ValueError
     else:
-        return header_pieces[1]
+        #  HTTP request passes all prior checks, pass URI back
+        return uri
+
+
+
+
+
+
+
+
+    #     raise TypeError(b'Method Not Allowed')
+    # elif header_pieces[2] != PROTOCOL:
+    #     raise ValueError(b'HTTP Version Not Supported')
+    # host_line = lines[1]
+    # host_line_pieces = host_line.split()
+    # if lines[2] != b'':
+    #     raise SyntaxError(b'Bad Request')
+    # if host_line_pieces[0] != HOST_PREFIX:
+    #     raise Exception(b'Bad Request')
+    # else:
+    #     return header_pieces[1]
+
 
 
 def setup_server():
@@ -47,6 +98,9 @@ def response_ok():
                             "DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n",
                             "SERVER: Python/2.7.6\r\n",
                             "\r\n"])
+    nowthis = Response.format(response_code=b'200', #TODO
+                           response_reason=b'response_reason')
+
     return response_ok
 
 
@@ -57,6 +111,8 @@ def response_error():
                                "DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n",
                                "SERVER: Python/2.7.6\r\n",
                                "\r\n"])
+    nowthis = Response.format(response_code=b'500', #TODO
+                           response_reason=b'OK')
     return response_error
 
 
