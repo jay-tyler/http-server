@@ -71,7 +71,7 @@ def parse_response(response):
         * Response include valid date
         * Response includes valid status code
 
-    if these validations are met, then return URI from response"""
+    if these validations are met, then return status code from response"""
     response = response.strip(CRLF).strip()
     lines = response.split(CRLF)
     initial_line = lines[0]
@@ -98,8 +98,8 @@ def parse_response(response):
         elif b'HTTP/1.1' not in protocol:
             to_return = False
         else:
-            #  HTTP response passes all prior checks, pass URI back
-            to_return = True
+            #  HTTP response passes all prior checks, pass response code back
+            to_return = response_code
     return to_return
 
 
@@ -130,21 +130,32 @@ def test_parse_bad_host_request():
 def test_response_ok():
     foo_uri = 'www.host.com/stuff'
     response = server.response_ok(foo_uri)
-    assert parse_response(response) == True
+    assert parse_response(response) == '200'
 
 
 def test_response_error():
     foo_uri = 'www.host.com/stuff'
     response = server.response_error(500, "Internal Server Error")
-    assert parse_response(response) == True
+    assert parse_response(response) == '500'
 
 
+def test_functional_test_of_bad_request(client_socket):
 
-def test_functional_test_of_response(client_socket):
     client_socket.connect(ADDR)
     client_socket.sendall("Hello there.")
     while True:
         response = client_socket.recv(1024)
         if len(response) < 1024:
             break
-    assert parse_response(response) == True
+    assert parse_response(response) == "500"
+
+
+def test_functional_test_of_good_request(client_socket):
+
+    client_socket.connect(ADDR)
+    client_socket.sendall(REQ_GOOD)
+    while True:
+        response = client_socket.recv(1024)
+        if len(response) < 1024:
+            break
+    assert parse_response(response) == "200"
