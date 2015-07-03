@@ -6,6 +6,29 @@ import sys
 
 ADDR = ('127.0.0.1', 8001)
 CRLF = ('\r\n')
+PROTOCOL = b'HTTP/1.1'
+
+Response = CRLF.join([
+    b'HTTP/1.1 {response_code} {response_reason}',
+    b'Content-Type: text/html; charset=UTF-8',
+    b''])
+
+def parse_request(request):
+    lines = request.split(CRLF)
+    header = lines[0]
+    header_pieces = header.split()
+    if header_pieces[0] != GET:
+        raise TypeError(b'Method Not Allowed')
+    elif header_pieces[2] != PROTOCOL:
+        raise ValueError(b'HTTP Version Not Supported')
+    host_line = lines[1]
+    host_line_pieces = host_line.split()
+    if lines[2] != b'':
+        raise SyntaxError(b'Bad Request')
+    if host_line_pieces[0] != HOST_PREFIX:
+        raise Exception(b'Bad Request')
+    else:
+        return header_pieces[1]
 
 
 def setup_server():
