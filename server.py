@@ -8,14 +8,13 @@ ADDR = ('127.0.0.1', 8001)
 CRLF = ('\r\n')
 PROTOCOL = b'HTTP/1.1'
 # Using this as a dummy var
-formatted_date = "Sun, 21 Jul 2001 23:32:15 GTM"
+foo_date = "Sun, 21 Jul 2001 23:32:15 GTM"
 reqtypes = set(["POST", "GET", "PUT", "HEAD", "DELETE", "OPTIONS", "TRACE"])
 
-Response = CRLF.join([
+RESPONSE = CRLF.join([
     b'HTTP/1.1 {response_code} {response_reason}',
     b'Content-Type: text/html; charset=UTF-8',
-    b'Date: {formatted_date}',
-    b''])
+    b'Date: {date}', CRLF])
 
 
 def parse_request(request):
@@ -27,12 +26,12 @@ def parse_request(request):
         * Request is HTTP/1.1
         * Request include valid host header
     if these validations are met, then return URI from request"""
-
+    request = request.strip(CRLF).strip()
     lines = request.split(CRLF)
     initial_line = lines[0]
     # Get method from initial line, and strip any leading white-space
     # or CRLF chars. Also format to uppercase for consistent handling.
-    reqmethod = initial_line.split()[0].strip().lstrip(CRLF).upper()
+    reqmethod = initial_line.split()[0].strip().upper()
     uri = initial_line.split()[1].strip()
     protocol = initial_line.split()[2].strip()
     #  Get headers by splitting response by CRLF and dropping the first line.
@@ -61,6 +60,7 @@ def parse_request(request):
         #  HTTP request passes all prior checks, pass URI back
         return uri
 
+
 def setup_server():
     server_socket = socket.socket(
         socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_IP)
@@ -70,29 +70,19 @@ def setup_server():
     return server_socket
 
 
-def response_ok():
+def response_ok(uri):
     """Return a status 200 HTTP response_ok"""
 
-    response_ok = b"".join(["HTTP/1.1 200 OK\r\n",
-                            "DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n",
-                            "SERVER: Python/2.7.6\r\n",
-                            "\r\n"])
-    nowthis = Response.format(response_code=b'200', #TODO
-                           response_reason=b'response_reason')
-
-    return response_ok
+    return RESPONSE.format(response_code=b'200',
+                           response_reason=b'OK', date=foo_date)
 
 
-def response_error():
+def response_error(code, reason_phrase):
     """Return a status 500 Internal Server Error"""
 
-    response_error = b"".join(["HTTP 500 Internal Server Error\r\n",
-                               "DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n",
-                               "SERVER: Python/2.7.6\r\n",
-                               "\r\n"])
-    nowthis = Response.format(response_code=b'500', #TODO
-                           response_reason=b'OK')
-    return response_error
+    return RESPONSE.format(response_code=b'500',
+                           response_reason=b'OK', date=foo_date)
+
 
 
 def main():
@@ -106,8 +96,20 @@ def main():
                 msg_chunk = conn.recv(1024)
                 msg += msg_chunk
                 if len(msg_chunk) < 1024:
-                    parse_request(msg)
-                    # conn.sendall(response_ok())
+                    try:
+                        resp_uri = parse_request(msg)
+                    except ValueError:
+                        response = response_error(400, b"Bad Request")
+                    except NotImplementedError:
+                        response = response_error(505, b"Version Not Supported")
+                    except IndexError:
+                        response = response_error(405, b"Method Not Allowed")
+                    except Exception:
+                        response = response_error(500, b"Internal Server Error")
+                    else:
+                        response = response_ok(resp_uri)
+
+                    conn.sendall(response)
                     conn.close()
                     break
             sys.stdout.write(msg)
