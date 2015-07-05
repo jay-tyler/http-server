@@ -84,6 +84,32 @@ def response_error(code, reason_phrase):
                            response_reason=b'OK', date=foo_date)
 
 
+def resolve_uri(uri):
+    """Takes a uri and returns the contents a tuple of (body, content-type)
+
+    body:
+    if uri points to a file, returns the contents of that file,
+    if uri points to a dir, returns an html file outlining contents
+
+    content-type:
+    when possible, will return a content type that is consistent with the
+    content-type HTTP header.
+
+    invalid requests will raise an appropriate Python exception
+
+    """
+    if uri.split('//', 1) == 2:
+        # Case of absolute uri
+        pth_lst = uri.split('/')[3:]  # Throw out 'http://www.whateverhost' bits
+    else:
+        # Case of relative uri
+        pth_lst = uri.split('/')
+        if pth_lst[0] in set("", "."):
+            pth_lst = pth_lst[1:]  # Case of starting path with either "/" or "./""
+
+        pass
+    pass
+
 
 def main():
     server_socket = setup_server()
