@@ -113,7 +113,11 @@ def resolve_uri(uri):
     pth = os.path.join(ROOT, *pth_lst)
 
     if os.path.isdir(pth):
-        return 2
+        # TODO: logic for displaying a webpage
+        for _, _, filenames in os.walk(pth):
+            for filename in filenames:
+                print filename
+        return os.walk(pth)
     elif os.path.exists(pth):
         return 1
     else:
