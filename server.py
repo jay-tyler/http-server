@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 import socket
 import sys
-
+import os
 
 ADDR = ('127.0.0.1', 8001)
 CRLF = ('\r\n')
@@ -98,17 +98,18 @@ def resolve_uri(uri):
     invalid requests will raise an appropriate Python exception
 
     """
-    if uri.split('//', 1) == 2:
+    if len(uri.split('//', 1)) == 2:
         # Case of absolute uri
-        pth_lst = uri.split('/')[3:]  # Throw out 'http://www.whateverhost' bits
+        pth_lst = uri.split('/')[3:]  # Throw out 'http://www.anyhost.com' bits
     else:
         # Case of relative uri
         pth_lst = uri.split('/')
-        if pth_lst[0] in set("", "."):
-            pth_lst = pth_lst[1:]  # Case of starting path with either "/" or "./""
+        if pth_lst[0] in set(["", "."]):
+            # Case of starting path with either "/" or "./"
+            pth_lst = pth_lst[1:]
+    pth = ("/").join(pth_lst)
 
-        pass
-    pass
+    return pth
 
 
 def main():

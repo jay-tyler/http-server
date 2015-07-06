@@ -23,19 +23,25 @@ STATUS500 = b"".join([b"HTTP 500 Internal Server Error\r\n",
 Response_SKEL = CRLF.join(["{Response} {requri} {protocol}",
                           "Host: {host}", "Date: {date}", CRLF]).lstrip(CRLF)
 
-REQ_GOOD = Response_SKEL.format(Response='get', requri='wwww.host.com/stuff',
-                                protocol="HTTP/1.1", host="www.host.com",
+REQ_GOOD = Response_SKEL.format(Response='get',
+                                requri='wwww.host.com/stuff',
+                                protocol="HTTP/1.1",
+                                host="www.host.com",
                                 date=DUMMY_DATE)
 
 
-REQ_BAD_METHOD = Response_SKEL.format(Response='post', requri='wwww.host.com/stuff',
-                                protocol="HTTP/1.1", host="www.host.com",
-                                date=DUMMY_DATE)
+REQ_BAD_METHOD = Response_SKEL.format(Response='post',
+                                      requri='wwww.host.com/stuff',
+                                      protocol="HTTP/1.1",
+                                      host="www.host.com",
+                                      date=DUMMY_DATE)
 
 
-REQ_BAD_PROTOCOL = Response_SKEL.format(Response='get', requri='wwww.host.com/stuff',
-                                protocol="HTTP/1.0", host="www.host.com",
-                                date=DUMMY_DATE)
+REQ_BAD_PROTOCOL = Response_SKEL.format(Response='get',
+                                        requri='wwww.host.com/stuff',
+                                        protocol="HTTP/1.0",
+                                        host="www.host.com",
+                                        date=DUMMY_DATE)
 
 
 REQ_BAD_HOST = CRLF.join(["{Response} {requri} {protocol}",
@@ -83,7 +89,8 @@ def parse_response(response):
 
     #  Get headers by splitting response by CRLF and dropping the first line.
     headers = [line.split()[0].strip() for line in lines]
-    #  Grabbing each header from above, removing trailing colon and converting to uppercase
+    #  Grabbing each header from above, removing trailing colon and converting
+    #  to uppercase
     headers = [header.rstrip(':').upper() for header in headers]
     #  Converting headers to set for ease of membership testing
     headers = set(headers)
@@ -114,17 +121,17 @@ def test_parse_good_request():
 
 def test_parse_bad_method_request():
     with pytest.raises(IndexError):
-      server.parse_request(REQ_BAD_METHOD)
+        server.parse_request(REQ_BAD_METHOD)
 
 
 def test_parse_bad_protocol_request():
     with pytest.raises(NotImplementedError):
-      server.parse_request(REQ_BAD_PROTOCOL)
+        server.parse_request(REQ_BAD_PROTOCOL)
 
 
 def test_parse_bad_host_request():
     with pytest.raises(ValueError):
-      server.parse_request(REQ_BAD_HOST)
+        server.parse_request(REQ_BAD_HOST)
 
 
 def test_response_ok():
@@ -134,7 +141,6 @@ def test_response_ok():
 
 
 def test_response_error():
-    foo_uri = 'www.host.com/stuff'
     response = server.response_error(500, "Internal Server Error")
     assert parse_response(response) == '500'
 
