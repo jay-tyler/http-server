@@ -4,6 +4,8 @@ import socket
 import sys
 import os
 
+ROOT = os.path.abspath(__file__)
+
 ADDR = ('127.0.0.1', 8001)
 CRLF = ('\r\n')
 PROTOCOL = b'HTTP/1.1'
@@ -36,7 +38,8 @@ def parse_request(request):
     protocol = initial_line.split()[2].strip()
     #  Get headers by splitting response by CRLF and dropping the first line.
     headers = [line.split()[0].strip() for line in lines][1:]
-    #  Grabbing each header from above, removing trailing colon and converting to uppercase
+    #  Grabbing each header from above, removing trailing colon and converting
+    #  to uppercase
     headers = [header.rstrip(':').upper() for header in headers]
     #  Converting headers to set for ease of membership testing
     headers = set(headers)
@@ -107,8 +110,10 @@ def resolve_uri(uri):
         if pth_lst[0] in set(["", "."]):
             # Case of starting path with either "/" or "./"
             pth_lst = pth_lst[1:]
-    pth = ("/").join(pth_lst)
+    pth = os.path.join(*pth_lst)
 
+    # if os.path.isdir(pth):
+    # elif os.path.exists(pth):
     return pth
 
 
