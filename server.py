@@ -4,7 +4,7 @@ import socket
 import sys
 import os
 
-ROOT = os.path.abspath(__file__)
+ROOT = os.path.dirname(os.path.abspath(__file__))
 
 ADDR = ('127.0.0.1', 8001)
 CRLF = ('\r\n')
@@ -110,11 +110,14 @@ def resolve_uri(uri):
         if pth_lst[0] in set(["", "."]):
             # Case of starting path with either "/" or "./"
             pth_lst = pth_lst[1:]
-    pth = os.path.join(*pth_lst)
+    pth = os.path.join(ROOT, *pth_lst)
 
-    # if os.path.isdir(pth):
-    # elif os.path.exists(pth):
-    return pth
+    if os.path.isdir(pth):
+        return 2
+    elif os.path.exists(pth):
+        return 1
+    else:
+        return 0
 
 
 def main():
