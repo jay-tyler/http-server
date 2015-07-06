@@ -1,36 +1,86 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import socket
 import sys
+import os
+import mimetypes
 
-ADDR = ('127.0.0.1', 8024)
-
-CRLF = b'\r\n'
-GET = b'GET'
+ADDR = ('127.0.0.1', 8001)
+CRLF = ('\r\n')
 PROTOCOL = b'HTTP/1.1'
-HOST_PREFIX = b'Host:'
+# Using this as a dummy var
+foo_date = "Sun, 21 Jul 2001 23:32:15 GTM"
+reqtypes = set(["POST", "GET", "PUT", "HEAD", "DELETE", "OPTIONS", "TRACE"])
+root = os.path.abspath(os.path.dirname(__file__), '..')
+# root is the parent directory of the directory where program resides.
 
-
-Response = CRLF.join([
+RESPONSE = CRLF.join([
     b'HTTP/1.1 {response_code} {response_reason}',
     b'Content-Type: text/html; charset=UTF-8',
-    b''])
+    b'Date: {date}', CRLF])
+
+
+def resolvue_urt(uri):
+    """If URI is directory returns files, if file returns content"""
+    if os.path.join(root + uri):
+        body = '<!DOCTYPE html><html><body><ul>'
+        for file_ in os.listdir(root + uri):
+            body += '<li>' + file_ + '</li>'
+        body += '</ul></body></html>'
+        resource_type = 'text/html'
+    elif os.path.isfile(root + uri):
+        if "../" in uri:
+            raise UserWarning(b"Access Denied")
+        with open((root + uri), 'rb') as file_:
+            body = file_.read()
+        resource_type, encoding = mimetypes.guess_type(uri)
+    else:
+        raise IOError(b'Resource Not Found')
+    return (body, resource_type)
+
 
 def parse_request(request):
+    """Take an HTTP request and determine whether it is valid; will raise
+    an appropriate error if not
+    will validate the following:
+        * Request is GET method
+        * Request is HTTP/1.1
+        * Request include valid host header
+    if these validations are met, then return URI from request"""
+    request = request.strip(CRLF).strip()
     lines = request.split(CRLF)
-    header = lines[0]
-    header_pieces = header.split()
-    if header_pieces[0] != GET:
-        raise TypeError(b'Method Not Allowed')
-    elif header_pieces[2] != PROTOCOL:
-        raise ValueError(b'HTTP Version Not Supported')
-    host_line = lines[1]
-    host_line_pieces = host_line.split()
-    if lines[2] != b'':
-        raise SyntaxError(b'Bad Request')
-    if host_line_pieces[0] != HOST_PREFIX:
-        raise Exception(b'Bad Request')
+    initial_line = lines[0]
+    # Get method from initial line, and strip any leading white-space
+    # or CRLF chars. Also format to uppercase for consistent handling.
+    reqmethod = initial_line.split()[0].strip().upper()
+    uri = initial_line.split()[1].strip()
+    protocol = initial_line.split()[2].strip()
+    #  Get headers by splitting response by CRLF and dropping the first line.
+    headers = [line.split()[0].strip() for line in lines][1:]
+    #  Grabbing each header from above, removing trailing colon and converting to uppercase
+    headers = [header.rstrip(':').upper() for header in headers]
+    #  Converting headers to set for ease of membership testing
+    headers = set(headers)
+    if reqmethod not in reqtypes:
+        #  HTTP request is invalid; containing fct should return
+        #  400 Bad Request
+        raise ValueError
+    elif b'GET' not in reqmethod:
+        #  HTTP request is for unsupported method; containing fct should
+        #  return 405 Method Not Allowed
+        raise IndexError
+    elif b'HTTP/1.1' not in protocol:
+        #  HTTP request is for a different protocol; containing fct should
+        #  return 505 HTTP Version Not Supported
+        raise NotImplementedError
+    elif b'HOST' not in headers:
+        #  HTTP request is not properly formed; containing fct should
+        #  return 400 Bad Request
+        raise ValueError
     else:
-        return header_pieces[1]
+        #  HTTP request passes all prior checks, pass URI back
+        return uri
+
 
 def setup_server():
     server_socket = socket.socket(
@@ -41,16 +91,24 @@ def setup_server():
     return server_socket
 
 
-def response_ok():
-    return Response.format(response_code=b'200',
-                           response_reason=b'OK')
+def response_ok(uri):
+    """Return a status 200 HTTP response_ok"""
 
-def response_error():
-    return Response.format(response_code=b'200',
-                           response_reason=b'response_reason')
+    return RESPONSE.format(response_code=b'200',
+                           response_reason=b'OK', date=foo_date)
+
+
+def response_error(code, reason_phrase):
+    """Return a status 500 Internal Server Error"""
+
+    return RESPONSE.format(response_code=b'500',
+                           response_reason=b'OK', date=foo_date)
+
+
 
 def main():
     server_socket = setup_server()
+
     while True:
         try:
             conn, addr = server_socket.accept()
@@ -59,17 +117,24 @@ def main():
                 msg_chunk = conn.recv(1024)
                 msg += msg_chunk
                 if len(msg_chunk) < 1024:
-                    conn.sendall(response_ok())
+                    try:
+                        resp_uri = parse_request(msg)
+                    except ValueError:
+                        response = response_error(400, b"Bad Request")
+                    except NotImplementedError:
+                        response = response_error(505, b"Version Not Supported")
+                    except IndexError:
+                        response = response_error(405, b"Method Not Allowed")
+                    except Exception:
+                        response = response_error(500, b"Internal Server Error")
+                    else:
+                        response = response_ok(resp_uri)
+
+                    conn.sendall(response)
                     conn.close()
-            try:
-                parse_request(msg)
-            except SyntaxError:
-                response_error(400, "Invalid SyntaxError")
-            except ValueError:
-                response_error(400, "Value Error")
+                    break
             sys.stdout.write(msg)
-            conn.close()
-            break
+
         except KeyboardInterrupt:
             conn.close()
             break
