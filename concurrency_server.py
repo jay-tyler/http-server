@@ -34,8 +34,8 @@ def start_server():
     from gevent.server import StreamServer
     from gevent.monkey import patch_all
     patch_all()
-    gserver = StreamServer(server.ADDR, start_server)
-    print('Starting gen server on port 8002')
+    gserver = StreamServer(server.ADDR, set_server)
+    print('Starting gen server on port 8001')
     gserver.serve_forever()
 
 if __name__ == '__main__':
