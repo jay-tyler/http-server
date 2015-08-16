@@ -6,17 +6,18 @@ import os
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
-ADDR = ('127.0.0.1', 8001)
-CRLF = ('\r\n')
+ADDR = (b'127.0.0.1', 8001)
+CRLF = (b'\r\n')
 PROTOCOL = b'HTTP/1.1'
 # Using this as a dummy var
-foo_date = "Sun, 21 Jul 2001 23:32:15 GTM"
+foo_date = b"Sun, 21 Jul 2001 23:32:15 GTM"
 reqtypes = set(["POST", "GET", "PUT", "HEAD", "DELETE", "OPTIONS", "TRACE"])
+
 
 RESPONSE = CRLF.join([
     b'HTTP/1.1 {response_code} {response_reason}',
-    b'Content-Type: text/html; charset=UTF-8',
-    b'Date: {date}', CRLF])
+    b'Content-Type: {ctype}; charset=UTF-8',
+    b'Date: {date}', CRLF, '{message}'])
 
 
 def parse_request(request):
@@ -114,10 +115,18 @@ def resolve_uri(uri):
 
     if os.path.isdir(pth):
         # TODO: logic for displaying a webpage
-        for _, _, filenames in os.walk(pth):
-            for filename in filenames:
-                print filename
-        return os.walk(pth)
+        def pack_filenames():
+            for _, _, filenames in os.walk(pth):
+                for filename in filenames:
+                    yield filename
+        html_top = b'<html><head></head><body><ul>'
+        body = CRLF.join([b"<li>{file}</li>".format(file=file)
+                                    for file in pack_filenames()])
+        html_end = b'</ul></body></html>'
+        # return os.walk(pth)
+        message = html_top + body + html_end
+        ctype = 'text/html'
+        return message, ctype
     elif os.path.exists(pth):
         return 1
     else:
