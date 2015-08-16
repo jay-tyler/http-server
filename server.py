@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import socket
 import sys
 import os
+import mimetypes
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
@@ -114,7 +115,6 @@ def resolve_uri(uri):
     pth = os.path.join(ROOT, *pth_lst)
 
     if os.path.isdir(pth):
-        # TODO: logic for displaying a webpage
         def pack_filenames():
             for _, _, filenames in os.walk(pth):
                 for filename in filenames:
@@ -123,15 +123,15 @@ def resolve_uri(uri):
         body = CRLF.join([b"<li>{file}</li>".format(file=file)
                                     for file in pack_filenames()])
         html_end = b'</ul></body></html>'
-        # return os.walk(pth)
         message = html_top + body + html_end
         ctype = 'text/html'
-        return message, ctype
     elif os.path.exists(pth):
-        return 1
+        with open(pth, 'r') as file:
+            message = file.read()
+        ctype = mimetypes.guess_type(pth)[0]
     else:
-        return 0
-
+        raise LookupError  # For 404
+    return message, ctype
 
 def main():
     server_socket = setup_server()
@@ -154,6 +154,8 @@ def main():
                         response = response_error(405, b"Method Not Allowed")
                     except Exception:
                         response = response_error(500, b"Internal Server Error")
+                    except LookupError:
+                        response = response_error(404, b"Not Found")
                     else:
                         response = response_ok(resp_uri)
 
