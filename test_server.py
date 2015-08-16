@@ -6,7 +6,7 @@ import server
 from multiprocessing import Process
 
 
-ADDR = ('127.0.0.1', 8001)
+ADDR = ('127.0.0.1', 8000)
 CRLF = b'\r\n'
 DUMMY_DATE = "Sun, 21 Jul 2001 23:32:15 GTM"
 
@@ -24,21 +24,21 @@ Response_SKEL = CRLF.join(["{Response} {requri} {protocol}",
                           "Host: {host}", "Date: {date}", CRLF]).lstrip(CRLF)
 
 REQ_GOOD = Response_SKEL.format(Response='get',
-                                requri='wwww.host.com/stuff',
+                                requri='http://www.host.com/images',
                                 protocol="HTTP/1.1",
                                 host="www.host.com",
                                 date=DUMMY_DATE)
 
 
 REQ_BAD_METHOD = Response_SKEL.format(Response='post',
-                                      requri='wwww.host.com/stuff',
+                                      requri='http://www.host.com/images',
                                       protocol="HTTP/1.1",
                                       host="www.host.com",
                                       date=DUMMY_DATE)
 
 
 REQ_BAD_PROTOCOL = Response_SKEL.format(Response='get',
-                                        requri='wwww.host.com/stuff',
+                                        requri='http://www.host.com/images',
                                         protocol="HTTP/1.0",
                                         host="www.host.com",
                                         date=DUMMY_DATE)
@@ -46,7 +46,8 @@ REQ_BAD_PROTOCOL = Response_SKEL.format(Response='get',
 
 REQ_BAD_HOST = CRLF.join(["{Response} {requri} {protocol}",
                           "Date: {date}"]).lstrip(CRLF).format(
-                                  Response='Get', requri='wwww.host.com/stuff',
+                                  Response='Get',
+                                  requri='http://www.host.com/images',
                                   protocol="HTTP/1.1", date=DUMMY_DATE)
 
 
@@ -60,7 +61,6 @@ def server_process():
 
 @pytest.fixture()
 def client_socket():
-
     client_socket = socket.socket(
         socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_IP
         )
@@ -81,17 +81,11 @@ def parse_response(response):
     response = response.strip(CRLF).strip()
     lines = response.split(CRLF)
     initial_line = lines[0]
-    # Get method from initial line, and strip any leading white-space
-    # or CRLF chars. Also format to uppercase for consistent handling.
     protocol = initial_line.split()[0].strip().upper()
     response_code = initial_line.split()[1].strip()
-    # response_code = initial_line.split()[2].strip()
-
-    #  Get headers by splitting response by CRLF and dropping the first line.
-    headers = [line.split()[0].strip() for line in lines]
-    #  Grabbing each header from above, removing trailing colon and converting
-    #  to uppercase
-    headers = [header.rstrip(':').upper() for header in headers]
+    headers = [line for line in lines if b':' in line]
+    headers = [line.split(':')[0].strip().upper() for line in lines]
+    # headers = [header.rstrip(b':').upper() for header in headers]
     #  Converting headers to set for ease of membership testing
     headers = set(headers)
 
@@ -116,7 +110,7 @@ def test_start_server(server_process):
 
 
 def test_parse_good_request():
-    assert server.parse_request(REQ_GOOD) == "wwww.host.com/stuff"
+    assert server.parse_request(REQ_GOOD) == b"http://www.host.com/images"
 
 
 def test_parse_bad_method_request():
@@ -135,25 +129,26 @@ def test_parse_bad_host_request():
 
 
 def test_response_ok():
-    foo_uri = 'www.host.com/stuff'
+    foo_uri = b'http://www.host.com'
     response = server.response_ok(foo_uri)
-    assert parse_response(response) == '200'
+    assert parse_response(response) == b'200'
 
 
 def test_response_error():
-    response = server.response_error(500, "Internal Server Error")
-    assert parse_response(response) == '500'
+    response = server.response_error(500, b"Internal Server Error")
+    assert parse_response(response) == b'500'
 
 
 def test_functional_test_of_bad_request(client_socket):
 
     client_socket.connect(ADDR)
-    client_socket.sendall("Hello there.")
+    client_socket.sendall(b"Hello there.")
     while True:
         response = client_socket.recv(1024)
         if len(response) < 1024:
             break
-    assert parse_response(response) == "500"
+    # import pdb; pdb.set_trace()
+    assert parse_response(response) == b"405"
 
 
 def test_functional_test_of_good_request(client_socket):
@@ -164,4 +159,4 @@ def test_functional_test_of_good_request(client_socket):
         response = client_socket.recv(1024)
         if len(response) < 1024:
             break
-    assert parse_response(response) == "200"
+    assert parse_response(response) == b"200"
