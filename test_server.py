@@ -6,9 +6,12 @@ import server
 from multiprocessing import Process
 
 
-ADDR = ('127.0.0.1', 8000)
+###################################################
+# Constants
+###################################################
+ADDR = (b'127.0.0.1', 8000)
 CRLF = b'\r\n'
-DUMMY_DATE = "Sun, 21 Jul 2001 23:32:15 GTM"
+DUMMY_DATE = b"Sun, 21 Jul 2001 23:32:15 GTM"
 
 STATUS200 = b"".join([b"HTTP/1.1 200 OK\r\n",
                       b"DATE: Sun, 21 Jul 2001 23:32:15 GTM\r\n",
@@ -20,37 +23,40 @@ STATUS500 = b"".join([b"HTTP 500 Internal Server Error\r\n",
                       b"SERVER: Python/2.7.6\r\n",
                       b"\r\n"])
 
-Response_SKEL = CRLF.join(["{Response} {requri} {protocol}",
-                          "Host: {host}", "Date: {date}", CRLF]).lstrip(CRLF)
+Response_SKEL = CRLF.join([b"{Response} {requri} {protocol}",
+                          b"Host: {host}", "Date: {date}", CRLF]).lstrip(CRLF)
 
-REQ_GOOD = Response_SKEL.format(Response='get',
-                                requri='http://www.host.com/images',
-                                protocol="HTTP/1.1",
-                                host="www.host.com",
+REQ_GOOD = Response_SKEL.format(Response=b'get',
+                                requri=b'http://www.host.com/images',
+                                protocol=b"HTTP/1.1",
+                                host=b"www.host.com",
                                 date=DUMMY_DATE)
 
 
-REQ_BAD_METHOD = Response_SKEL.format(Response='post',
-                                      requri='http://www.host.com/images',
-                                      protocol="HTTP/1.1",
-                                      host="www.host.com",
+REQ_BAD_METHOD = Response_SKEL.format(Response=b'post',
+                                      requri=b'http://www.host.com/images',
+                                      protocol=b"HTTP/1.1",
+                                      host=b"www.host.com",
                                       date=DUMMY_DATE)
 
 
-REQ_BAD_PROTOCOL = Response_SKEL.format(Response='get',
-                                        requri='http://www.host.com/images',
-                                        protocol="HTTP/1.0",
-                                        host="www.host.com",
+REQ_BAD_PROTOCOL = Response_SKEL.format(Response=b'get',
+                                        requri=b'http://www.host.com/images',
+                                        protocol=b"HTTP/1.0",
+                                        host=b"www.host.com",
                                         date=DUMMY_DATE)
 
 
-REQ_BAD_HOST = CRLF.join(["{Response} {requri} {protocol}",
-                          "Date: {date}"]).lstrip(CRLF).format(
-                                  Response='Get',
-                                  requri='http://www.host.com/images',
-                                  protocol="HTTP/1.1", date=DUMMY_DATE)
+REQ_BAD_HOST = CRLF.join([b"{Response} {requri} {protocol}",
+                          b"Date: {date}"]).lstrip(CRLF).format(
+                                  Response=b'Get',
+                                  requri=b'http://www.host.com/images',
+                                  protocol=b"HTTP/1.1", date=DUMMY_DATE)
 
 
+###################################################
+# Fixtures
+###################################################
 @pytest.yield_fixture()
 def server_process():
     process = Process(target=server.main)
@@ -68,6 +74,9 @@ def client_socket():
     return client_socket
 
 
+###################################################
+# Helper Functions
+###################################################
 def parse_response(response):
     """Take an HTTP response and determine whether it is valid; will raise
     an appropriate error if not
@@ -77,7 +86,8 @@ def parse_response(response):
         * Response include valid date
         * Response includes valid status code
 
-    if these validations are met, then return status code from response"""
+    if these validations are met, then return status code from response
+    as well as the body as (status_code, body)"""
     response = response.strip(CRLF).strip()
     lines = response.split(CRLF)
     initial_line = lines[0]
@@ -92,18 +102,21 @@ def parse_response(response):
     try:
         int(response_code)
     except ValueError:
-        to_return = False
+        to_return = False, None
     else:
         if b'DATE' not in headers:
-            to_return = False
+            to_return = False, None
         elif b'HTTP/1.1' not in protocol:
-            to_return = False
+            to_return = False, None
         else:
             #  HTTP response passes all prior checks, pass response code back
-            to_return = response_code
+            to_return = response_code, lines[-1]
     return to_return
 
 
+###################################################
+# Tests of Functions
+###################################################
 def test_start_server(server_process):
     """Dummy function to start server"""
     pass
@@ -131,14 +144,17 @@ def test_parse_bad_host_request():
 def test_response_ok():
     foo_uri = b'http://www.host.com'
     response = server.response_ok(foo_uri)
-    assert parse_response(response) == b'200'
+    assert parse_response(response)[0] == b'200'
 
 
 def test_response_error():
     response = server.response_error(500, b"Internal Server Error")
-    assert parse_response(response) == b'500'
+    assert parse_response(response)[0] == b'500'
 
 
+###################################################
+# Functional Tests
+###################################################
 def test_functional_test_of_bad_request(client_socket):
 
     client_socket.connect(ADDR)
@@ -148,7 +164,7 @@ def test_functional_test_of_bad_request(client_socket):
         if len(response) < 1024:
             break
     # import pdb; pdb.set_trace()
-    assert parse_response(response) == b"405"
+    assert parse_response(response)[0] == b"405"
 
 
 def test_functional_test_of_good_request(client_socket):
@@ -159,4 +175,22 @@ def test_functional_test_of_good_request(client_socket):
         response = client_socket.recv(1024)
         if len(response) < 1024:
             break
-    assert parse_response(response) == b"200"
+    assert parse_response(response)[0] == b"200"
+
+
+def test_functional_request_of_dir(client_socket):
+    request = Response_SKEL.format(Response=b'get',
+        requri=b'http://www.host.com/',
+        protocol=b"HTTP/1.1", host=b"www.host.com",
+        date=DUMMY_DATE)   
+
+    client_socket.connect(ADDR)
+    client_socket.sendall(request)
+    while True:
+        response = client_socket.recv(1024)
+        if len(response) < 1024:
+            break
+    assert b'text/html' in response
+    assert parse_response(response)[0] == b'200'
+    assert b'a_web_page.html' in response
+    assert b'JPEG_example.jpg' not in response

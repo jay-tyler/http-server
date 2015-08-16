@@ -107,7 +107,6 @@ def resolve_uri(uri):
     invalid requests will raise an appropriate Python exception
 
     """
-    # import pdb; pdb.set_trace()
     if len(uri.split(b'//', 1)) == 2:
         # Case of absolute uri
         pth_lst = uri.split(b'/')[3:]  # Throw out 'http://www.anyhost.com' bits
@@ -121,9 +120,10 @@ def resolve_uri(uri):
 
     if os.path.isdir(pth):
         def pack_filenames():
-            for _, _, filenames in os.walk(pth):
-                for filename in filenames:
-                    yield filename
+            dirlist = os.walk(pth, topdown=True)
+            _, _, filenames = next(dirlist)
+            for filename in filenames:
+                yield filename
         html_top = b'<html><head></head><body><ul>'
         body = CRLF.join([b"<li>{file}</li>".format(file=file)
                                     for file in pack_filenames()])
