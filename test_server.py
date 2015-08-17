@@ -3,12 +3,13 @@ import socket
 import pytest
 import server
 from multiprocessing import Process
+from server import ADDR
+from time import sleep
 
 
 ###################################################
 # Constants
 ###################################################
-ADDR = (b'127.0.0.1', 8004)
 CRLF = b'\r\n'
 DUMMY_DATE = b"Sun, 21 Jul 2001 23:32:15 GTM"
 
@@ -57,10 +58,16 @@ REQ_BAD_HOST = CRLF.join([b"{Response} {requri} {protocol}",
 # Fixtures
 ###################################################
 @pytest.yield_fixture()
-def server_process():
+def server_process(request):
+    sleep(0.1)
     process = Process(target=server.main)
     process.daemon = True
     process.start()
+
+    def cleanup():
+        process.terminate()
+    request.addfinalizer(cleanup)
+
     yield process
 
 

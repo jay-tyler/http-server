@@ -3,34 +3,33 @@ import server
 
 
 def set_server(conn, adr):
-    try:
-        msg = ""
-        while True:
-            msg_chunk = conn.recv(1024)
-            msg += msg_chunk
-            if len(msg_chunk) < 1024:
-                try:
-                    resp_uri = parse_request(msg)
-                except ValueError:
-                    response = response_error(400, b"Bad Request")
-                except NotImplementedError:
-                    response = response_error(505, b"Version Not Supported")
-                except IndexError:
-                    response = response_error(405, b"Method Not Allowed")
-                except LookupError:
-                    response = response_error(404, b"Not Found")
-                except Exception:
-                    response = response_error(500, b"Internal Server Error")
-                else:
-                    response = response_ok(resp_uri)
+    while True:
+        try:
+            msg = ""
+            while True:
+                msg_chunk = conn.recv(64)
+                msg += msg_chunk
+                if len(msg_chunk) < 64:
+                    try:
+                        resp_uri = server.parse_request(msg)
+                    except ValueError:
+                        response = server.response_error(400, b"Bad Request")
+                    except NotImplementedError:
+                        response = server.response_error(505, b"Version Not Supported")
+                    except IndexError:
+                        response = server.response_error(405, b"Method Not Allowed")
+                    except LookupError:
+                        response = server.response_error(404, b"Not Found")
+                    except Exception:
+                        response = server.response_error(500, b"Internal Server Error")
+                    else:
+                        response = server.response_ok(resp_uri)
 
-                conn.sendall(response) 
-                conn.close()
+                    conn.sendall(response)
+                    conn.close()
 
         except KeyboardInterrupt:
             break
-
-        sys.stdout.write(msg)
 
 
 def start_server():

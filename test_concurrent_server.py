@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 import socket
 import pytest
-import concurrency_server
+import concurrent_server
 from multiprocessing import Process
+from server import ADDR
+from time import sleep
 
 
 ###################################################
 # Constants
 ###################################################
-ADDR = (b'127.0.0.1', 8004)
 CRLF = b'\r\n'
 DUMMY_DATE = b"Sun, 21 Jul 2001 23:32:15 GTM"
 
@@ -57,17 +58,19 @@ REQ_BAD_HOST = CRLF.join([b"{Response} {requri} {protocol}",
 # Fixtures
 ###################################################
 @pytest.yield_fixture()
-def server_process():
-    process = Process(target=concurrency_server.start_server)
+def server_process(request):
+    process = Process(target=concurrent_server.start_server)
     process.daemon = True
     process.start()
+    sleep(0.1)
 
     def cleanup():
         process.terminate()
 
-    pytest.addfinalizer(cleanup)
+    request.addfinalizer(cleanup)
 
-    return process
+    yield process
+
 
 @pytest.fixture()
 def client_socket():
@@ -115,6 +118,7 @@ def parse_response(response):
             to_return = response_code, lines[-1]
     return to_return
 
+
 ###################################################
 # Functional Tests
 ###################################################
@@ -143,7 +147,7 @@ def test_functional_request_of_dir(server_process, client_socket):
     request = Response_SKEL.format(Response=b'get',
         requri=b'http://www.host.com/',
         protocol=b"HTTP/1.1", host=b"www.host.com",
-        date=DUMMY_DATE)   
+        date=DUMMY_DATE)
 
     client_socket.connect(ADDR)
     client_socket.sendall(request)
