@@ -250,7 +250,7 @@ def test_functional_request_of_text_file(client_socket):
     assert b'This is a very simple text file.' in response
 
 
-def test_functional_request_of_image_file(client_socket):
+def test_functional_request_of_image_file(server_process, client_socket):
     request = Response_SKEL.format(Response=b'get',
         requri=b'http://www.host.com/images/JPEG_example.jpg',
         protocol=b"HTTP/1.1", host=b"www.host.com",
@@ -258,9 +258,11 @@ def test_functional_request_of_image_file(client_socket):
 
     client_socket.connect(ADDR)
     client_socket.sendall(request)
+    response = ""
     while True:
-        response = client_socket.recv(1024)
-        if len(response) < 1024:
+        acc = client_socket.recv(1024)
+        response += acc
+        if len(acc) < 1024:
             break
     code, body = parse_response(response)
     assert code == b'200'
