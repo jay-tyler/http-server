@@ -6,7 +6,7 @@ import mimetypes
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'webroot')
 ROOT = ROOT.encode('utf-8')
-ADDR = (b'127.0.0.1', 8004)
+ADDR = (b'127.0.0.1', 8001)
 CRLF = (b'\r\n')
 PROTOCOL = b'HTTP/1.1'
 # Using this as a dummy var
