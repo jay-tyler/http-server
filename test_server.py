@@ -114,11 +114,6 @@ def parse_response(response):
 ###################################################
 # Tests of Functions
 ###################################################
-def test_start_server(server_process):
-    """Dummy function to start server"""
-    pass
-
-
 def test_parse_good_request():
     assert server.parse_request(REQ_GOOD) == b"http://www.host.com/images"
 
@@ -176,7 +171,7 @@ def test_resolve_uri_invalid():
 ###################################################
 # Functional Tests
 ###################################################
-def test_functional_test_of_bad_request(client_socket):
+def test_functional_test_of_bad_request(server_process, client_socket):
     client_socket.connect(ADDR)
     client_socket.sendall(b"Hello there.")
     while True:
@@ -187,7 +182,7 @@ def test_functional_test_of_bad_request(client_socket):
     assert parse_response(response)[0] == "405"
 
 
-def test_functional_test_of_good_request(client_socket):
+def test_functional_test_of_good_request(server_process, client_socket):
     client_socket.connect(ADDR)
     client_socket.sendall(REQ_GOOD)
     while True:
@@ -197,7 +192,7 @@ def test_functional_test_of_good_request(client_socket):
     assert parse_response(response)[0] == "200"
 
 
-def test_functional_request_of_dir(client_socket):
+def test_functional_request_of_dir(server_process, client_socket):
     request = Response_SKEL.format(Response=b'get',
         requri=b'http://www.host.com/',
         protocol=b"HTTP/1.1", host=b"www.host.com",
@@ -215,7 +210,7 @@ def test_functional_request_of_dir(client_socket):
     assert b'JPEG_example.jpg' not in response
 
 
-def test_functional_request_of_dir(client_socket):
+def test_functional_request_of_dir(server_process, client_socket):
     request = Response_SKEL.format(Response=b'get',
         requri=b'http://www.host.com/',
         protocol=b"HTTP/1.1", host=b"www.host.com",
@@ -233,7 +228,7 @@ def test_functional_request_of_dir(client_socket):
     assert b'JPEG_example.jpg' not in response
 
 
-def test_functional_request_of_text_file(client_socket):
+def test_functional_request_of_text_file(server_process, client_socket):
     request = Response_SKEL.format(Response=b'get',
         requri=b'http://www.host.com/sample.txt',
         protocol=b"HTTP/1.1", host=b"www.host.com",
