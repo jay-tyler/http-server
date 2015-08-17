@@ -17,16 +17,19 @@ def set_server(conn, adr):
                     response = response_error(505, b"Version Not Supported")
                 except IndexError:
                     response = response_error(405, b"Method Not Allowed")
+                except LookupError:
+                    response = response_error(404, b"Not Found")
                 except Exception:
                     response = response_error(500, b"Internal Server Error")
                 else:
                     response = response_ok(resp_uri)
 
-                conn.sendall(response)              
+                conn.sendall(response) 
                 conn.close()
 
-            except KeyboardInterrupt
-                break
+        except KeyboardInterrupt:
+            break
+
         sys.stdout.write(msg)
 
 

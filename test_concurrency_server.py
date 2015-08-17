@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import socket
 import pytest
-import server
+import concurrency_server
 from multiprocessing import Process
 
 
@@ -58,11 +58,16 @@ REQ_BAD_HOST = CRLF.join([b"{Response} {requri} {protocol}",
 ###################################################
 @pytest.yield_fixture()
 def server_process():
-    process = Process(target=server.main)
+    process = Process(target=concurrency_server.start_server)
     process.daemon = True
     process.start()
-    yield process
 
+    def cleanup():
+        process.terminate()
+
+    pytest.addfinalizer(cleanup)
+
+    return process
 
 @pytest.fixture()
 def client_socket():
@@ -109,64 +114,6 @@ def parse_response(response):
             #  HTTP response passes all prior checks, pass response code back
             to_return = response_code, lines[-1]
     return to_return
-
-
-###################################################
-# Tests of Functions
-###################################################
-def test_parse_good_request():
-    assert server.parse_request(REQ_GOOD) == b"http://www.host.com/images"
-
-
-def test_parse_bad_method_request():
-    with pytest.raises(IndexError):
-        server.parse_request(REQ_BAD_METHOD)
-
-
-def test_parse_bad_protocol_request():
-    with pytest.raises(NotImplementedError):
-        server.parse_request(REQ_BAD_PROTOCOL)
-
-
-def test_parse_bad_host_request():
-    with pytest.raises(ValueError):
-        server.parse_request(REQ_BAD_HOST)
-
-
-def test_response_ok():
-    foo_uri = b'http://www.host.com'
-    response = server.response_ok(foo_uri)
-    assert parse_response(response)[0] == '200'
-
-
-def test_response_error():
-    response = server.response_error(500, b"Internal Server Error")
-    assert parse_response(response)[0] == '500'
-
-
-def test_resolve_uri_file():
-    body, ctype = server.resolve_uri("http://www.host.com/sample.txt")
-    assert ctype == b'text/plain'
-    assert body is not None
-
-
-def test_resolve_uri_file():
-    body, ctype = server.resolve_uri("http://www.host.com/sample.txt")
-    assert ctype == b'text/plain'
-    assert b'This is a very simple text file.' in body
-
-
-def test_resolve_uri_dir():
-    body, ctype = server.resolve_uri("http://www.host.com/")
-    assert ctype == b'text/html'
-    assert b'a_web_page.html' in body
-    assert b'JPEG_example.jpg' not in body
-
-
-def test_resolve_uri_invalid():
-    with pytest.raises(LookupError):
-        server.resolve_uri("http://www.host.com/blah")
-
 
 ###################################################
 # Functional Tests
